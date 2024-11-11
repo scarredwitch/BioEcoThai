@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='styles.css') }}">
+    <title>BioEco Portal</title>
+    <script>
+        // JavaScript function to shorten URIs by replacing them with prefixes
+        function shortenURI(uri) {
+            const prefixes = {
+                "http://rs.tdwg.org/dwc/terms/": "dwc:",
+                "http://rs.tdwg.org/dwc/iri/": "dwciri:",
+                "http://purl.org/dsw/": "dsw:",
+                "http://purl.org/dc/terms/": "dcterms:",
+                "http://www.w3.org/2000/01/rdf-schema#": "rdfs:",
+                "http://www.semanticweb.org/SirikitJoshi/BioEcoThai/": "bet:"
+            };
+
+            for (const [fullUri, prefix] of Object.entries(prefixes)) {
+                if (uri.startsWith(fullUri)) {
+                    return uri.replace(fullUri, prefix);
+                }
+            }
+            return uri; // If no match, return the original URI
+        }
+
+        // Modified search function to include URI shortening
+        async function search() {
+            const term = document.getElementById("searchTerm").value;
+            if (!term) return;
+
+            try {
+                const response = await fetch(`/search?term=${encodeURIComponent(term)}`);
+                const data = await response.json();
+
+                const resultsTable = document.getElementById("resultsTable");
+                resultsTable.innerHTML = "";
+
+                if (data.results.length === 0) {
+                    resultsTable.innerHTML = "<tr><td colspan='3'>No results found</td></tr>";
+                } else {
+                    data.results.forEach(result => {
+                        const row = resultsTable.insertRow();
+                        const cell1 = row.insertCell(0);
+                        const cell2 = row.insertCell(1);
+                        const cell3 = row.insertCell(2);
+                        cell1.textContent = shortenURI(result.subject);
+                        cell2.textContent = shortenURI(result.predicate);
+                        cell3.textContent = shortenURI(result.object);
+                    });
+                }
+            } catch (error) {
+                console.error("Error fetching data:", error);
+            }
+        }
+
+        function predefinedSearch(term) {
+            document.getElementById("searchTerm").value = term;
+            search();
+        }
+
+        function openGitHub() {
+            window.open("https://github.com/scarredwitch/BioDiverseThai", "_blank");
+        }
+
+        // Add event listener for "Enter" key
+        document.addEventListener('DOMContentLoaded', () => {
+            const searchInput = document.getElementById("searchTerm");
+            searchInput.addEventListener('keydown', (event) => {
+                if (event.key === "Enter") {
+                    search();
+                }
+            });
+        });
+    </script>
+</head>
+<body>
+    <header class="header">
+        <div class="header-content">
+            <h1>BioEco Portal</h1>
+            <div class="top-buttons">
+                <button class="sparql-button">
+                    <img src="https://cygri.github.io/rdf-logos/png/sparql-256.png" alt="SPARQL Icon" style="height: 20px; margin-right: 5px;">
+                    SPARQL
+                </button>
+                <button class="github-button" onclick="openGitHub()">
+                    <img src="https://logos-world.net/wp-content/uploads/2020/11/GitHub-Symbol.png" alt="GitHub Icon" style="height: 20px; margin-right: 5px;">
+                    GitHub
+                </button>
+            </div>
+        </div>
+    </header>    
+    <div class="container">
+        <div class="search-bar">
+            <input type="text" id="searchTerm" placeholder="Search portal">
+            <button onclick="search()">
+                <img src="https://img.icons8.com/ios-filled/50/ffffff/search.png" alt="Search Icon" style="height: 24px;">
+            </button>
+        </div>
+        <div class="predefined-buttons">
+            <button onclick="predefinedSearch('animals')">Animals</button>
+            <button onclick="predefinedSearch('plants')">Plants</button>
+            <button onclick="predefinedSearch('fungi')">Fungi</button>
+            <button onclick="predefinedSearch('tourism')">Tourism</button>
+            <button onclick="predefinedSearch('cultural heritage')">Cultural Heritage</button>
+            <button onclick="predefinedSearch('national')">National Parks</button>
+        </div>
+        <div class="results-section">
+            <table border="1">
+                <thead>
+                    <tr>
+                        <th>Subject</th>
+                        <th>Predicate</th>
+                        <th>Object</th>
+                    </tr>
+                </thead>
+                <tbody id="resultsTable"></tbody>
+            </table>
+        </div>
+    </div>
+</body>
+</html>
