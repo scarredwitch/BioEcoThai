@@ -43,5 +43,5 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 - **DarwinCore**: For standardized terms that facilitate data sharing and consistency in the biodiversity domain.
 
 ## Contact
-For more information or questions, feel free to contact the project maintainers via GitHub or at sirikitjoshi@gmail.com].
+For more information or questions, feel free to contact the project maintainers via GitHub or at sirikitjoshi@gmail.com.
 
