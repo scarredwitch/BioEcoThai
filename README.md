@@ -32,6 +32,39 @@ To get started with the BioEcoThai Ontology Project:
    ```
 2. Load the ontology into a tool like Protégé to explore and make contributions.
 
+## Running the Frontend with Apache Jena Fuseki
+To set up a local instance of the BioEcoThai frontend using Apache Jena Fuseki, follow these steps:
+
+1. **Install Apache Jena Fuseki**: Download and install Apache Jena Fuseki from [https://jena.apache.org/download/](https://jena.apache.org/download/).
+
+2. **Start Apache Jena Fuseki**:
+   - Navigate to the folder where you installed Fuseki.
+   - Start the Fuseki server by running the following command:
+     ```bash
+     ./fuseki-server
+     ```
+   - Access the Fuseki server at [http://localhost:3030/](http://localhost:3030/) to manage datasets.
+
+3. **Load the Ontology**:
+   - Create a new dataset in Fuseki and upload the BioEcoThai ontology file (e.g., `BioEcoThai.rdf`). This will allow you to query the ontology using SPARQL.
+
+4. **Run the Frontend** (Python Flask API):
+   - Ensure that the Fuseki server is running.
+   - Navigate to the `frontend` folder in the cloned repository:
+     ```bash
+     cd BioEcoThai/frontend
+     ```
+   - Open your terminal (e.g., VS Code terminal) and run the following command to start the Python application:
+     ```bash
+     python app.py
+     ```
+   - The frontend should now be accessible at [http://localhost:5000/](http://localhost:5000/).
+
+5. **Connecting Frontend to Fuseki**:
+   - Make sure to point to your local Fuseki instance at `http://localhost:3030/ds/query`.
+   - This will allow the frontend to interact with the SPARQL endpoint and display data from the BioEcoThai ontology.
+
+
 ## Contributing
 Contributions are welcome! If you'd like to contribute to the project, please fork the repository and create a pull request. Feel free to report any issues or suggest improvements.
 
