@@ -9,11 +9,13 @@
         // JavaScript function to shorten URIs by replacing them with prefixes
         function shortenURI(uri) {
             const prefixes = {
+                "http://www.w3.org/2002/07/owl#": "owl:",
+                "http://www.w3.org/1999/02/22-rdf-syntax-ns#": "rdf:",
+                "http://www.w3.org/2000/01/rdf-schema#": "rdfs:",
                 "http://rs.tdwg.org/dwc/terms/": "dwc:",
                 "http://rs.tdwg.org/dwc/iri/": "dwciri:",
                 "http://purl.org/dsw/": "dsw:",
                 "http://purl.org/dc/terms/": "dcterms:",
-                "http://www.w3.org/2000/01/rdf-schema#": "rdfs:",
                 "http://www.semanticweb.org/SirikitJoshi/BioEcoThai/": "bet:"
             };
 
@@ -34,24 +36,28 @@
                 const response = await fetch(`/search?term=${encodeURIComponent(term)}`);
                 const data = await response.json();
 
-                const resultsTable = document.getElementById("resultsTable");
-                resultsTable.innerHTML = "";
-
-                if (data.results.length === 0) {
-                    resultsTable.innerHTML = "<tr><td colspan='3'>No results found</td></tr>";
-                } else {
-                    data.results.forEach(result => {
-                        const row = resultsTable.insertRow();
-                        const cell1 = row.insertCell(0);
-                        const cell2 = row.insertCell(1);
-                        const cell3 = row.insertCell(2);
-                        cell1.textContent = shortenURI(result.subject);
-                        cell2.textContent = shortenURI(result.predicate);
-                        cell3.textContent = shortenURI(result.object);
-                    });
-                }
+                displayResults(data);
             } catch (error) {
                 console.error("Error fetching data:", error);
+            }
+        }
+
+        function displayResults(data) {
+            const resultsTable = document.getElementById("resultsTable");
+            resultsTable.innerHTML = "";
+
+            if (data.results.length === 0) {
+                resultsTable.innerHTML = "<tr><td colspan='3'>No results found</td></tr>";
+            } else {
+                data.results.forEach(result => {
+                    const row = resultsTable.insertRow();
+                    const cell1 = row.insertCell(0);
+                    const cell2 = row.insertCell(1);
+                    const cell3 = row.insertCell(2);
+                    cell1.textContent = shortenURI(result.subject);
+                    cell2.textContent = shortenURI(result.predicate);
+                    cell3.textContent = shortenURI(result.object);
+                });
             }
         }
 
@@ -60,53 +66,181 @@
             search();
         }
 
-        function openGitHub() {
-            window.open("https://github.com/scarredwitch/BioDiverseThai", "_blank");
+// Add event listener for "DOMContentLoaded"
+document.addEventListener('DOMContentLoaded', () => {
+    // Call toggleToSearch to initialize the display state
+    toggleToSearch();
+
+    // Add listener for "Enter" key in the search input
+    const searchInput = document.getElementById("searchTerm");
+    if (searchInput) {
+        searchInput.addEventListener('keydown', (event) => {
+            if (event.key === "Enter") {
+                search();
+            }
+        });
+    }
+});
+
+
+// JavaScript function to run SPARQL queries from the SPARQL query box
+// Modified JavaScript function to run SPARQL queries
+async function runSPARQLQuery() {
+            const query = document.getElementById("sparqlQuery").value;
+            if (!query) return;
+
+            try {
+                const response = await fetch('/sparql', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/sparql-query',
+                    },
+                    body: query,
+                });
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`Server error: ${response.status} - ${errorText}`);
+                }
+
+                const data = await response.json();
+                if (data.error) {
+                    alert(data.error);
+                } else {
+                    displayDynamicSPARQLResults(data);
+                }
+            } catch (error) {
+                console.error("Error running SPARQL query:", error);
+                alert("Failed to fetch SPARQL results. Please check your query or the server.");
+            }
         }
 
-        // Add event listener for "Enter" key
+        function displayDynamicSPARQLResults(data) {
+            const resultsTable = document.getElementById("sparqlResultsTable");
+            resultsTable.innerHTML = "";
+
+            if (data.results.bindings && data.results.bindings.length > 0) {
+                const headers = data.head.vars;
+
+                const headerRow = resultsTable.insertRow();
+                headers.forEach(header => {
+                    const headerCell = document.createElement("th");
+                    headerCell.textContent = header;
+                    headerRow.appendChild(headerCell);
+                });
+
+                data.results.bindings.forEach(binding => {
+                    const row = resultsTable.insertRow();
+                    headers.forEach(header => {
+                        const cell = row.insertCell();
+                        // Apply shortenURI to values if they're URIs
+                        const value = binding[header] && binding[header].value ? binding[header].value : '';
+                        cell.textContent = value.startsWith("http") ? shortenURI(value) : value;
+                    });
+                });
+            } else {
+                resultsTable.innerHTML = "<tr><td colspan='6'>No results found</td></tr>";
+            }
+        }
+
+
+        // Toggle functions
+        function toggleToSPARQL() {
+            document.querySelector('.search-section').style.display = 'none';
+            document.querySelector('.searchResults-section').style.display = 'none';
+            document.querySelector('.sparql-query-section').style.display = 'block';
+            document.querySelector('.sparqlResults-section').style.display = 'block';
+            document.querySelector('.sparql-button').style.display = 'none';
+            document.querySelector('.search-button').style.display = 'inline-block';
+        }
+
+        function toggleToSearch() {
+            document.querySelector('.search-section').style.display = 'block';
+            document.querySelector('.searchResults-section').style.display = 'block';
+            document.querySelector('.sparql-query-section').style.display = 'none';
+            document.querySelector('.sparqlResults-section').style.display = 'none';
+            document.querySelector('.sparql-button').style.display = 'inline-block';
+            document.querySelector('.search-button').style.display = 'none';
+        }
+
+        // GitHub link function
+        function openGitHub() {
+            window.open('https://github.com/scarredwitch/BioEcoThai', '_blank');
+        }
+
+
         document.addEventListener('DOMContentLoaded', () => {
-            const searchInput = document.getElementById("searchTerm");
-            searchInput.addEventListener('keydown', (event) => {
-                if (event.key === "Enter") {
-                    search();
-                }
-            });
-        });
+        // Set the default SPARQL query
+        const defaultQuery = `
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX dcterms: <http://purl.org/dc/terms/>
+PREFIX dwc: <http://rs.tdwg.org/dwc/terms/>
+PREFIX dsw: <http://purl.org/dsw/>
+PREFIX bet: <http://www.semanticweb.org/SirikitJoshi/BioEcoThai/>
+
+SELECT ?subject ?predicate ?object
+WHERE {
+    ?subject ?predicate ?object
+}
+LIMIT 10`.trim(); // Removes extra space at the beginning and end
+        document.getElementById('sparqlQuery').value = defaultQuery;
+    });
     </script>
 </head>
-<body>
+<body onload="toggleToSearch()">
+    <!-- Header Section -->
     <header class="header">
         <div class="header-content">
-            <h1>BioEco Portal</h1>
-            <div class="top-buttons">
-                <button class="sparql-button">
-                    <img src="https://cygri.github.io/rdf-logos/png/sparql-256.png" alt="SPARQL Icon" style="height: 20px; margin-right: 5px;">
-                    SPARQL
-                </button>
-                <button class="github-button" onclick="openGitHub()">
-                    <img src="https://logos-world.net/wp-content/uploads/2020/11/GitHub-Symbol.png" alt="GitHub Icon" style="height: 20px; margin-right: 5px;">
-                    GitHub
-                </button>
-            </div>
+            <img src="{{ url_for('static', filename='BioEco Portal Transparent.png') }}" 
+                 alt="BioEco Portal Logo" 
+                 class="logo">
         </div>
-    </header>    
-    <div class="container">
-        <div class="search-bar">
-            <input type="text" id="searchTerm" placeholder="Search portal">
-            <button onclick="search()">
-                <img src="https://img.icons8.com/ios-filled/50/ffffff/search.png" alt="Search Icon" style="height: 24px;">
+        <div class="top-buttons">
+            <button class="sparql-button" onclick="toggleToSPARQL()">
+                <img src="https://cygri.github.io/rdf-logos/png/sparql-256.png" alt="SPARQL Icon" style="height: 20px; margin-right: 5px;">
+                SPARQL
+            </button>
+            <button class="search-button" onclick="toggleToSearch()" style="display: none;">
+                <img src="https://img.icons8.com/ios-filled/24/ffffff/search.png" alt="Search Icon" style="height: 20px; margin-right: 5px;">
+                Search
+            </button>
+            <button class="github-button" onclick="openGitHub()">
+                <img src="https://logos-world.net/wp-content/uploads/2020/11/GitHub-Symbol.png" alt="GitHub Icon" style="height: 20px; margin-right: 5px;">
+                GitHub
             </button>
         </div>
-        <div class="predefined-buttons">
-            <button onclick="predefinedSearch('animals')">Animals</button>
-            <button onclick="predefinedSearch('plants')">Plants</button>
-            <button onclick="predefinedSearch('fungi')">Fungi</button>
-            <button onclick="predefinedSearch('tourism')">Tourism</button>
-            <button onclick="predefinedSearch('cultural heritage')">Cultural Heritage</button>
-            <button onclick="predefinedSearch('national')">National Parks</button>
+    </header>
+
+
+    <div class="container">
+        <!-- Search Section -->
+        <div class="search-section">
+            <div class="search-bar">
+                <input type="text" id="searchTerm" placeholder="Search portal">
+                <button onclick="search()">
+                    <img src="https://img.icons8.com/ios-filled/50/ffffff/search.png" alt="Search Icon" style="height: 24px;">
+                </button>
+            </div>
+            <div class="predefined-buttons">
+                <button onclick="predefinedSearch('animals')">Animals</button>
+                <button onclick="predefinedSearch('plants')">Plants</button>
+                <button onclick="predefinedSearch('fungi')">Fungi</button>
+                <button onclick="predefinedSearch('tourism')">Tourism</button>
+                <button onclick="predefinedSearch('cultural')">Cultural Heritage</button>
+                <button onclick="predefinedSearch('national')">National Parks</button>
+            </div>
         </div>
-        <div class="results-section">
+
+        <!-- SPARQL Query Section -->
+        <div class="sparql-query-section">
+            <h2>Run Your SPARQL Query</h2>
+            <textarea id="sparqlQuery" rows="15" style="width: 100%; padding: 5px;"></textarea>
+            <button onclick="runSPARQLQuery()" style="margin-top: 5px; padding: 5px; background-color: #4caf50; color: white;">Run Query</button>
+        </div>
+        
+
+        <!-- Results for Search -->
+        <div class="searchResults-section results-section">
             <table border="1">
                 <thead>
                     <tr>
@@ -116,6 +250,14 @@
                     </tr>
                 </thead>
                 <tbody id="resultsTable"></tbody>
+            </table>
+        </div>
+
+        <!-- Results for SPARQL -->
+        <div class="sparqlResults-section results-section">
+            <table border="1">
+                <thead id="sparqlTableHead"></thead>
+                <tbody id="sparqlResultsTable"></tbody>
             </table>
         </div>
     </div>
